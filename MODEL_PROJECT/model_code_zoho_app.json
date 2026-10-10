@@ -1,0 +1,359 @@
+{
+  "app": {
+    "name": "Sleep Analytics",
+    "link_name": "sleep_analytics",
+    "platform": "Zoho Creator",
+    "domain": "Health & Sleep Analytics",
+    "description": "Cleans, stores and visualizes global sleep health, lifestyle and disorder data to derive insights on sleep patterns, quality and disturbance trends across age groups and seasons.",
+    "aim": "To clean, process and visualize sleep health, lifestyle and disorder datasets and build visualizations that reveal sleep patterns, quality and disturbance trends across age groups and seasons.",
+    "problem_statement": "Individuals and researchers lack a unified visual dashboard comparing sleep quality, sleep stage composition, disturbance frequency and disorder prevalence across age groups and seasons. A data-driven system is needed to identify at-risk groups, seasonal patterns and lifestyle factors affecting sleep.",
+    "source_github": "https://github.com/alwinabishekst/FDVA---SLEEP-ANALYTICS-MINI-PROJECT.git",
+    "time_zone": "Asia/Kolkata",
+    "date_format": "dd-MMM-yyyy"
+  },
+
+  "forms": [
+    {
+      "name": "Age_Group",
+      "display_name": "Age Group",
+      "purpose": "Master list of age bands used across all analytics",
+      "fields": [
+        { "name": "Group_Name", "type": "Single Line", "required": true, "unique": true },
+        { "name": "Min_Age", "type": "Number", "required": true },
+        { "name": "Max_Age", "type": "Number", "required": false },
+        { "name": "Sort_Order", "type": "Number", "required": true }
+      ],
+      "seed_data": [
+        { "Group_Name": "Teens (13-18)", "Min_Age": 13, "Max_Age": 18, "Sort_Order": 1 },
+        { "Group_Name": "Young Adult (19-30)", "Min_Age": 19, "Max_Age": 30, "Sort_Order": 2 },
+        { "Group_Name": "Adult (31-45)", "Min_Age": 31, "Max_Age": 45, "Sort_Order": 3 },
+        { "Group_Name": "Mid-Life (46-60)", "Min_Age": 46, "Max_Age": 60, "Sort_Order": 4 },
+        { "Group_Name": "Senior (61-75)", "Min_Age": 61, "Max_Age": 75, "Sort_Order": 5 },
+        { "Group_Name": "Elderly (76+)", "Min_Age": 76, "Max_Age": null, "Sort_Order": 6 }
+      ]
+    },
+
+    {
+      "name": "Sleep_Record",
+      "display_name": "Sleep Record",
+      "purpose": "Core dataset: one row per participant sleep observation (cleaned data entry / import)",
+      "fields": [
+        { "name": "Record_ID", "type": "Auto Number", "prefix": "SLP-" },
+        { "name": "Participant_ID", "type": "Single Line", "required": true },
+        { "name": "Age", "type": "Number", "required": true, "validation": "13 to 100" },
+        { "name": "Age_Group", "type": "Lookup", "lookup_form": "Age_Group", "lookup_field": "Group_Name", "set_by": "workflow" },
+        { "name": "Record_Date", "type": "Date", "required": true },
+        { "name": "Month", "type": "Number", "set_by": "workflow", "formula": "Record_Date.getMonth()" },
+        { "name": "Season", "type": "Dropdown", "choices": ["Spring", "Summer", "Autumn", "Winter"], "set_by": "workflow" },
+        { "name": "Occupation_Group", "type": "Dropdown", "choices": ["Student", "Working Professional", "Retired"], "required": true },
+        { "name": "Sleep_Duration_Hours", "type": "Decimal", "required": true, "validation": "0 to 24" },
+        { "name": "Evening_Screen_Time_Hours", "type": "Decimal", "required": true, "validation": "0 to 24" },
+        { "name": "REM_Sleep_Percent", "type": "Decimal", "required": true, "validation": "0 to 100" },
+        { "name": "Deep_Sleep_Percent", "type": "Decimal", "required": true, "validation": "0 to 100" },
+        { "name": "Light_Sleep_Percent", "type": "Decimal", "required": true, "validation": "0 to 100" },
+        { "name": "Sleep_Efficiency_Percent", "type": "Decimal", "required": true, "validation": "0 to 100" },
+        { "name": "Sleep_Onset_Difficulty", "type": "Decimal", "required": false, "note": "Minutes to fall asleep or 1-10 score" },
+        { "name": "Sleep_Quality_Score", "type": "Decimal", "required": true, "validation": "0.0 to 1.0" },
+        { "name": "At_Risk_Flag", "type": "Checkbox", "set_by": "workflow" }
+      ]
+    },
+
+    {
+      "name": "Sleep_Disturbance",
+      "display_name": "Sleep Disturbance",
+      "purpose": "Each reported disturbance event (feeds Fig 2)",
+      "fields": [
+        { "name": "Disturbance_ID", "type": "Auto Number", "prefix": "DST-" },
+        { "name": "Sleep_Record", "type": "Lookup", "lookup_form": "Sleep_Record", "lookup_field": "Record_ID" },
+        { "name": "Disturbance_Date", "type": "Date", "required": true },
+        { "name": "Month", "type": "Number", "set_by": "workflow" },
+        { "name": "Disturbance_Type", "type": "Dropdown", "choices": ["Noise", "Temperature", "Light", "Stress", "Medical", "Other"] }
+      ]
+    },
+
+    {
+      "name": "Sleep_Disorder_Case",
+      "display_name": "Sleep Disorder Case",
+      "purpose": "Reported sleep disorder cases (feeds Fig 5 and Fig 6)",
+      "fields": [
+        { "name": "Case_ID", "type": "Auto Number", "prefix": "CASE-" },
+        { "name": "Participant_ID", "type": "Single Line", "required": true },
+        { "name": "Age_Group", "type": "Lookup", "lookup_form": "Age_Group", "lookup_field": "Group_Name" },
+        { "name": "Reported_Date", "type": "Date", "required": true },
+        { "name": "Season", "type": "Dropdown", "choices": ["Spring", "Summer", "Autumn", "Winter"], "set_by": "workflow" },
+        {
+          "name": "Disorder_Category",
+          "type": "Dropdown",
+          "required": true,
+          "choices": ["Insomnia", "Sleep Apnea", "Restless Leg Syndrome", "Narcolepsy", "Circadian Rhythm Disorder"]
+        }
+      ]
+    },
+
+    {
+      "name": "Sleep_Stage_Transition",
+      "display_name": "Sleep Stage Transition",
+      "purpose": "Markov transition probabilities between sleep stages (feeds Fig 4)",
+      "fields": [
+        { "name": "From_Stage", "type": "Dropdown", "choices": ["Awake", "Light", "Deep", "REM"], "required": true },
+        { "name": "To_Stage", "type": "Dropdown", "choices": ["Awake", "Light", "Deep", "REM"], "required": true },
+        { "name": "Probability", "type": "Decimal", "validation": "0 to 1", "required": true }
+      ],
+      "seed_data": [
+        { "From_Stage": "Awake", "To_Stage": "Awake", "Probability": 0.10 },
+        { "From_Stage": "Awake", "To_Stage": "Light", "Probability": 0.70 },
+        { "From_Stage": "Awake", "To_Stage": "Deep", "Probability": 0.05 },
+        { "From_Stage": "Awake", "To_Stage": "REM", "Probability": 0.15 },
+        { "From_Stage": "Light", "To_Stage": "Awake", "Probability": 0.08 },
+        { "From_Stage": "Light", "To_Stage": "Light", "Probability": 0.55 },
+        { "From_Stage": "Light", "To_Stage": "Deep", "Probability": 0.20 },
+        { "From_Stage": "Light", "To_Stage": "REM", "Probability": 0.17 },
+        { "From_Stage": "Deep", "To_Stage": "Awake", "Probability": 0.03 },
+        { "From_Stage": "Deep", "To_Stage": "Light", "Probability": 0.35 },
+        { "From_Stage": "Deep", "To_Stage": "Deep", "Probability": 0.55 },
+        { "From_Stage": "Deep", "To_Stage": "REM", "Probability": 0.07 },
+        { "From_Stage": "REM", "To_Stage": "Awake", "Probability": 0.12 },
+        { "From_Stage": "REM", "To_Stage": "Light", "Probability": 0.60 },
+        { "From_Stage": "REM", "To_Stage": "Deep", "Probability": 0.05 },
+        { "From_Stage": "REM", "To_Stage": "REM", "Probability": 0.23 }
+      ]
+    }
+  ],
+
+  "workflows": [
+    {
+      "name": "Set_Record_Derived_Fields",
+      "form": "Sleep_Record",
+      "trigger": "On Success (Create / Edit)",
+      "actions": [
+        "Set Month = Record_Date.getMonth()",
+        "Set Season = Spring if Month in (3,4,5); Summer if (6,7,8); Autumn if (9,10,11); Winter if (12,1,2)",
+        "Look up Age_Group where Age >= Min_Age and (Age <= Max_Age or Max_Age is null)",
+        "Set At_Risk_Flag = true if Sleep_Quality_Score < 0.6 or Sleep_Efficiency_Percent < 70"
+      ],
+      "deluge_snippet": "m = input.Record_Date.getMonth();\ninput.Month = m;\nif(m == 12 || m <= 2){ input.Season = \"Winter\"; }\nelse if(m <= 5){ input.Season = \"Spring\"; }\nelse if(m <= 8){ input.Season = \"Summer\"; }\nelse { input.Season = \"Autumn\"; }\nag = Age_Group[Min_Age <= input.Age && (Max_Age >= input.Age || Max_Age == null)];\ninput.Age_Group = ag.ID;\ninput.At_Risk_Flag = (input.Sleep_Quality_Score < 0.6 || input.Sleep_Efficiency_Percent < 70);"
+    },
+    {
+      "name": "Set_Disturbance_Month",
+      "form": "Sleep_Disturbance",
+      "trigger": "On Success (Create / Edit)",
+      "actions": ["Set Month = Disturbance_Date.getMonth()"]
+    },
+    {
+      "name": "Set_Disorder_Season",
+      "form": "Sleep_Disorder_Case",
+      "trigger": "On Success (Create / Edit)",
+      "actions": ["Derive Season from Reported_Date using the same month-to-season mapping"]
+    },
+    {
+      "name": "Data_Validation",
+      "form": "Sleep_Record",
+      "trigger": "On Validate",
+      "actions": [
+        "Reject if Sleep_Quality_Score outside 0 to 1",
+        "Reject if any stage percent or efficiency is outside 0 to 100",
+        "Reject duplicate Participant_ID + Record_Date",
+        "Reject if Sleep_Duration_Hours or Evening_Screen_Time_Hours is outside 0 to 24"
+      ]
+    },
+    {
+      "name": "At_Risk_Notification",
+      "form": "Sleep_Record",
+      "trigger": "On Success when At_Risk_Flag = true",
+      "actions": ["Send email notification to Analyst role with Participant_ID, Age_Group, Sleep_Quality_Score and Sleep_Efficiency_Percent"]
+    },
+    {
+      "name": "Winter_Peak_Alert",
+      "type": "Schedule (monthly)",
+      "actions": ["Send summary email to Admin if seasonal disorder cases for the current season exceed the average of the other seasons by 10% or more"]
+    }
+  ],
+
+  "reports": [
+    { "name": "All_Sleep_Records", "type": "List", "form": "Sleep_Record", "group_by": "Age_Group", "filters": ["Season", "Occupation_Group", "Age_Group", "At_Risk_Flag"] },
+    { "name": "At_Risk_Participants", "type": "List", "form": "Sleep_Record", "criteria": "At_Risk_Flag == true" },
+    { "name": "All_Disturbances", "type": "List", "form": "Sleep_Disturbance", "filters": ["Month", "Disturbance_Type"] },
+    { "name": "All_Disorder_Cases", "type": "List", "form": "Sleep_Disorder_Case", "filters": ["Season", "Disorder_Category", "Age_Group"] },
+    { "name": "Stage_Transition_Matrix", "type": "List", "form": "Sleep_Stage_Transition" },
+    { "name": "Records_Import", "type": "Import", "form": "Sleep_Record", "formats": ["CSV", "XLSX"] }
+  ],
+
+  "charts": [
+    {
+      "id": "fig1",
+      "name": "Sleep_Stage_Components_by_Age_Group",
+      "title": "Sleep Stage Components by Age Group",
+      "chart_type": "Grouped Column",
+      "source_form": "Sleep_Record",
+      "x_axis": "Age_Group",
+      "y_axis": [
+        { "field": "REM_Sleep_Percent", "aggregation": "Average", "label": "REM Sleep %", "color": "#FF6B6B" },
+        { "field": "Deep_Sleep_Percent", "aggregation": "Average", "label": "Deep Sleep %", "color": "#4ECDC4" },
+        { "field": "Light_Sleep_Percent", "aggregation": "Average", "label": "Light Sleep %", "color": "#1B8FA3" },
+        { "field": "Sleep_Efficiency_Percent", "aggregation": "Average", "label": "Sleep Efficiency %", "color": "#B8E6E0" }
+      ],
+      "y_axis_title": "Index Value",
+      "x_axis_title": "Age Group",
+      "reference_values_approx": {
+        "Teens (13-18)": { "REM": 22, "Deep": 20, "Light": 50, "Efficiency": 92 },
+        "Young Adult (19-30)": { "REM": 21, "Deep": 18, "Light": 52, "Efficiency": 89 },
+        "Adult (31-45)": { "REM": 19, "Deep": 15, "Light": 54, "Efficiency": 85 },
+        "Mid-Life (46-60)": { "REM": 17, "Deep": 12, "Light": 55, "Efficiency": 80 },
+        "Senior (61-75)": { "REM": 15, "Deep": 10, "Light": 56, "Efficiency": 74 },
+        "Elderly (76+)": { "REM": 13, "Deep": 8, "Light": 57, "Efficiency": 68 }
+      }
+    },
+    {
+      "id": "fig2",
+      "name": "Sleep_Disturbance_Frequency_by_Month",
+      "title": "Sleep Disturbance Frequency by Month",
+      "chart_type": "Area / Line with markers",
+      "source_form": "Sleep_Disturbance",
+      "x_axis": "Month",
+      "y_axis": [{ "field": "Disturbance_ID", "aggregation": "Count", "label": "Number of Reported Disturbances", "color": "#C0314B" }],
+      "reference_values": { "1": 48, "2": 44, "3": 47, "4": 30, "5": 33, "6": 53, "7": 40, "8": 29, "9": 41, "10": 45, "11": 31, "12": 42 }
+    },
+    {
+      "id": "fig3",
+      "name": "Sleep_Quality_Score_by_Season",
+      "title": "Sleep Quality Score Distribution by Season",
+      "chart_type": "Box Plot (use Zoho Analytics widget / custom widget if native box plot is unavailable)",
+      "source_form": "Sleep_Record",
+      "x_axis": "Season",
+      "y_axis": [{ "field": "Sleep_Quality_Score", "aggregation": "Distribution (min, Q1, median, Q3, max, outliers)" }],
+      "category_order": ["Spring", "Summer", "Autumn", "Winter"]
+    },
+    {
+      "id": "fig4",
+      "name": "Sleep_Stage_Transition_Heatmap",
+      "title": "Sleep Stage Transition Patterns (Markov Transition Probabilities)",
+      "chart_type": "Heatmap (Pivot with color scale, or custom widget)",
+      "source_form": "Sleep_Stage_Transition",
+      "rows": "From_Stage",
+      "columns": "To_Stage",
+      "value": { "field": "Probability", "aggregation": "Sum" },
+      "color_scale": { "min": 0.0, "max": 0.7, "palette": "Purple-Pink-Crimson" },
+      "stage_order": ["Awake", "Light", "Deep", "REM"]
+    },
+    {
+      "id": "fig5",
+      "name": "Seasonal_Sleep_Disorder_Cases",
+      "title": "Seasonal Sleep Disorder Case Distribution",
+      "chart_type": "Column",
+      "source_form": "Sleep_Disorder_Case",
+      "x_axis": "Season",
+      "y_axis": [{ "field": "Case_ID", "aggregation": "Count", "label": "Number of Reported Cases" }],
+      "data_labels": true,
+      "reference_values": { "Spring": 312, "Summer": 289, "Autumn": 301, "Winter": 356 }
+    },
+    {
+      "id": "fig6",
+      "name": "Sleep_Disorder_Category_Share",
+      "title": "Sleep Disorder Category Share",
+      "chart_type": "Donut",
+      "source_form": "Sleep_Disorder_Case",
+      "category": "Disorder_Category",
+      "value": { "field": "Case_ID", "aggregation": "Count", "show_as": "Percentage" },
+      "reference_values_percent": {
+        "Insomnia": 34,
+        "Sleep Apnea": 27,
+        "Restless Leg Syndrome": 16,
+        "Narcolepsy": 9,
+        "Circadian Rhythm Disorder": 14
+      }
+    },
+    {
+      "id": "fig7",
+      "name": "Sleep_Duration_vs_Screen_Time",
+      "title": "Sleep Duration vs. Evening Screen Time",
+      "chart_type": "Scatter",
+      "source_form": "Sleep_Record",
+      "x_axis": { "field": "Evening_Screen_Time_Hours", "label": "Evening Screen Time (hours)" },
+      "y_axis": { "field": "Sleep_Duration_Hours", "label": "Average Sleep Duration (hours)" },
+      "series_by": "Occupation_Group",
+      "series_colors": { "Student": "#4C72B0", "Working Professional": "#DD8452", "Retired": "#55A868" },
+      "trend_line": true
+    }
+  ],
+
+  "pages": [
+    {
+      "name": "Sleep_Analytics_Dashboard",
+      "display_name": "Sleep Analytics Dashboard",
+      "type": "Dashboard",
+      "layout": "responsive-grid",
+      "global_filters": ["Age_Group", "Season", "Occupation_Group", "Date Range"],
+      "sections": [
+        { "title": "Sleep Composition", "widgets": ["fig1"] },
+        { "title": "Seasonal and Monthly Trends", "widgets": ["fig2", "fig3", "fig5"] },
+        { "title": "Sleep Architecture", "widgets": ["fig4"] },
+        { "title": "Disorders and Lifestyle", "widgets": ["fig6", "fig7"] }
+      ],
+      "kpi_cards": [
+        { "label": "Total Records", "source": "Sleep_Record", "aggregation": "Count" },
+        { "label": "Avg Sleep Quality", "source": "Sleep_Record", "field": "Sleep_Quality_Score", "aggregation": "Average" },
+        { "label": "Avg Sleep Efficiency %", "source": "Sleep_Record", "field": "Sleep_Efficiency_Percent", "aggregation": "Average" },
+        { "label": "At-Risk Participants", "source": "Sleep_Record", "criteria": "At_Risk_Flag == true", "aggregation": "Count" },
+        { "label": "Total Disorder Cases", "source": "Sleep_Disorder_Case", "aggregation": "Count" }
+      ]
+    },
+    {
+      "name": "Insights",
+      "display_name": "Key Insights",
+      "type": "Page",
+      "content": [
+        "REM and deep sleep percentages decline steadily with age, while light sleep share and sleep-onset difficulty increase. Sleep efficiency drops from about 92% in teenagers to under 70% in the elderly.",
+        "Sleep disturbances peak in June and dip in April and August, suggesting a seasonal, possibly temperature- or daylight-linked pattern rather than a random distribution.",
+        "Winter shows the lowest median sleep quality score and the widest spread, while spring shows the highest and most consistent scores.",
+        "The transition heatmap shows frequent shifts into light sleep from every stage, while deep sleep is the most sticky stage once entered (55% self-transition probability).",
+        "Insomnia and sleep apnea together account for over 60% of reported sleep disorder cases, making them priority targets for intervention.",
+        "Evening screen time shows a clear negative relationship with sleep duration across all occupation groups, with students showing the steepest sensitivity."
+      ]
+    },
+    {
+      "name": "About_Project",
+      "display_name": "About Project",
+      "type": "Page",
+      "content": {
+        "title": "Mini Project - Sleep Analytics",
+        "domain": "Health & Sleep Analytics",
+        "aim": "See app.aim",
+        "problem_statement": "See app.problem_statement",
+        "github": "https://github.com/alwinabishekst/FDVA---SLEEP-ANALYTICS-MINI-PROJECT.git"
+      }
+    }
+  ],
+
+  "navigation": {
+    "menu": [
+      { "label": "Dashboard", "target": "Sleep_Analytics_Dashboard" },
+      { "label": "Sleep Records", "target": "All_Sleep_Records" },
+      { "label": "At-Risk Participants", "target": "At_Risk_Participants" },
+      { "label": "Disturbances", "target": "All_Disturbances" },
+      { "label": "Disorder Cases", "target": "All_Disorder_Cases" },
+      { "label": "Stage Transitions", "target": "Stage_Transition_Matrix" },
+      { "label": "Insights", "target": "Insights" },
+      { "label": "About", "target": "About_Project" }
+    ]
+  },
+
+  "roles_and_permissions": [
+    { "role": "Admin", "access": "Full access to forms, reports, workflows, import and settings" },
+    { "role": "Analyst", "access": "Create and edit records, view all reports and dashboard, export data, receive at-risk alerts" },
+    { "role": "Viewer", "access": "Read-only access to dashboard and Insights page" }
+  ],
+
+  "data_cleaning_rules": [
+    "Remove duplicate Participant_ID + Record_Date rows on import",
+    "Trim whitespace and standardize category names (Occupation_Group, Disorder_Category)",
+    "Convert dates to a single format (dd-MMM-yyyy)",
+    "Flag or reject values outside valid ranges (percentages 0-100, quality score 0-1, hours 0-24)",
+    "Impute or flag missing Sleep_Quality_Score and stage percentages before analysis"
+  ],
+
+  "notes": [
+    "Zoho Creator has no single-file app import format; this JSON is a build blueprint. Create the forms and fields manually or via the Creator REST API / Deluge, then add reports, workflows and the dashboard from this spec.",
+    "reference_values and seed_data come from the project report figures. Age-group values for Fig 1 are approximate readings from the chart.",
+    "Box plot (Fig 3) and heatmap (Fig 4) are not native Creator chart types; use a Zoho Analytics embedded view or a custom widget."
+  ]
+}
